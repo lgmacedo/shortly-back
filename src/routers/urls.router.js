@@ -5,10 +5,12 @@ import checkAuthorization from "../middlewares/checkAuthorization.middleware.js"
 
 import urlSchema from "../schemas/urlSchema.schema.js";
 
-import { getUrlById, urlShortening } from "../controllers/urls.controller.js";
+import { deleteUrl, getUrlById, redirectToUrl, urlShortening } from "../controllers/urls.controller.js";
 
 const urlsRouter = Router();
 urlsRouter.post("/urls/shorten", validateSchema(urlSchema), checkAuthorization, urlShortening);
 urlsRouter.get("/urls/:id", getUrlById);
+urlsRouter.get("/urls/open/:shortUrl", redirectToUrl);
+urlsRouter.delete("/urls/:id", checkAuthorization, deleteUrl);
 
 export default urlsRouter;

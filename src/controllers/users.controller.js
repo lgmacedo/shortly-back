@@ -30,8 +30,41 @@ export async function signIn(req, res) {
     if (!emailQuery.rowCount || !bcrypt.compareSync(password, user.password))
       return res.sendStatus(401);
     const token = uuid();
-    await db.query(`INSERT INTO sessions ("userId", token) VALUES ($1, $2);`, [user.id, token]);
+    await db.query(`INSERT INTO sessions ("userId", token) VALUES ($1, $2);`, [
+      user.id,
+      token,
+    ]);
     res.status(200).send({ token });
+  } catch (err) {
+    return res.status(500).send(err.message);
+  }
+}
+
+export async function getUserData(req, res) {
+  const { token } = res.locals;
+  try {
+    const sessionQuery = await db.query(
+      `SELECT * FROM sessions WHERE token = $1;`,
+      [token]
+    );
+    if (!sessionQuery.rowCount) return res.sendStatus(401);
+    const userId = sessionQuery.rows[0].userId;
+    const userQuery = await db.query(
+      `
+      SELECT users.id AS id, users.name as name, SUM(urls."visitCount") AS "visitCount" 
+      FROM users JOIN urls 
+      ON users.id = urls."userId"
+      WHERE users.id = $1
+      GROUP BY users.id;`,
+      [userId]
+    );
+    const user = userQuery.rows[0];
+    const urlsQuery = await db.query(
+      `SELECT id, "shortUrl", url, "visitCount" FROM urls WHERE "userId" = $1;`,
+      [userId]
+    );
+    const urls = urlsQuery.rows;
+    return res.status(200).send({ ...user, visitCount: Number(user.visitCount), shortenedUrls: urls });
   } catch (err) {
     return res.status(500).send(err.message);
   }

@@ -17,12 +17,29 @@ export async function urlShortening(req, res) {
       `INSERT INTO urls ("shortUrl", url, "userId") VALUES ($1, $2, $3);`,
       [customId, url, session.userId]
     );
-    const urlQuery = await db.query(`SELECT * FROM urls WHERE "shortUrl" = $1;`, [
-      customId,
-    ]);
+    const urlQuery = await db.query(
+      `SELECT * FROM urls WHERE "shortUrl" = $1;`,
+      [customId]
+    );
     const urlInserted = urlQuery.rows[0];
-    return res.status(201).send({ id: urlInserted.id, shortUrl: urlInserted.shortUrl });
+    return res
+      .status(201)
+      .send({ id: urlInserted.id, shortUrl: urlInserted.shortUrl });
   } catch (err) {
     res.status(500).send(err.message);
+  }
+}
+
+export async function getUrlById(req, res) {
+  const { id } = req.params;
+  try {
+    const urlQuery = await db.query(`SELECT * FROM urls WHERE id = $1;`, [id]);
+    if(!urlQuery.rowCount) return res.sendStatus(404);
+    const url = urlQuery.rows[0];
+    return res
+      .status(200)
+      .send({ id: url.id, shortUrl: url.shortUrl, url: url.url });
+  } catch (err) {
+    return res.status(500).send(err.message);
   }
 }

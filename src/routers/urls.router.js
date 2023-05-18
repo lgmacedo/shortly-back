@@ -5,9 +5,10 @@ import checkAuthorization from "../middlewares/checkAuthorization.middleware.js"
 
 import urlSchema from "../schemas/urlSchema.schema.js";
 
-import { urlShortening } from "../controllers/urls.controller.js";
+import { getUrlById, urlShortening } from "../controllers/urls.controller.js";
 
 const urlsRouter = Router();
 urlsRouter.post("/urls/shorten", validateSchema(urlSchema), checkAuthorization, urlShortening);
+urlsRouter.get("/urls/:id", getUrlById);
 
 export default urlsRouter;

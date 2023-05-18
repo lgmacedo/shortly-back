@@ -64,7 +64,35 @@ export async function getUserData(req, res) {
       [userId]
     );
     const urls = urlsQuery.rows;
-    return res.status(200).send({ ...user, visitCount: Number(user.visitCount), shortenedUrls: urls });
+    return res.status(200).send({
+      ...user,
+      visitCount: Number(user.visitCount),
+      shortenedUrls: urls,
+    });
+  } catch (err) {
+    return res.status(500).send(err.message);
+  }
+}
+
+export async function getRanking(req, res) {
+  try {
+    const rankingQuery = await db.query(`
+    SELECT users.id AS id,
+      users.name AS name,
+      COUNT(CASE WHEN urls."userId" = users.id THEN 1 END) AS "linksCount",
+      SUM(CASE WHEN urls."userId" = users.id THEN urls."visitCount" END) AS "visitCount"
+    FROM users
+    JOIN urls ON users.id = urls."userId"
+    GROUP BY users.id, users.name
+    ORDER BY "visitCount" DESC LIMIT 10;`);
+    const ranking = rankingQuery.rows.map((u) => {
+      return {
+        ...u,
+        linksCount: Number(u.linksCount),
+        visitCount: Number(u.visitCount),
+      };
+    });
+    return res.status(200).send(ranking);
   } catch (err) {
     return res.status(500).send(err.message);
   }
